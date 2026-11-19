@@ -16,6 +16,7 @@
     <properties>
         <java.version>25</java.version>
         <openhtmltopdf.version>1.1.114</openhtmltopdf.version>
+        <jasperreports.version>7.0.3</jasperreports.version>
     </properties>
 
     <dependencies>
@@ -55,6 +56,27 @@
             <version>${openhtmltopdf.version}</version>
         </dependency>
 
+        <!-- JasperReports: la misma hoja desde plantillas .jrxml -->
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports</artifactId>
+            <version>${jasperreports.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports-pdf</artifactId>
+            <version>${jasperreports.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports-jdt</artifactId>
+            <version>${jasperreports.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports-fonts</artifactId>
+            <version>${jasperreports.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

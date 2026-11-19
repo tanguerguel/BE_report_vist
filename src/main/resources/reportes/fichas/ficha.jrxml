@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hoja de la ficha de monitoreo en blanco (equivalente a templates/fichas/hoja-ficha.html). Una fila de detalle por dimensión. -->
+<jasperReport name="ficha" language="java" pageWidth="595" pageHeight="842" columnWidth="533" leftMargin="31" rightMargin="31" topMargin="34" bottomMargin="34">
+	<style name="Base" default="true" fontName="DejaVu Sans" fontSize="8.0"/>
+	<style name="Seccion" fontName="DejaVu Sans" fontSize="9.5" bold="true"/>
+	<style name="Celda" fontName="DejaVu Sans" fontSize="8.0">
+		<box topPadding="3" leftPadding="4" bottomPadding="3" rightPadding="4">
+			<pen lineWidth="0.75" lineColor="#111111"/>
+		</box>
+	</style>
+	<parameter name="NOMBRE" class="java.lang.String"/>
+	<parameter name="DISTINTIVO" class="java.lang.String"/>
+	<parameter name="NORMA" class="java.lang.String"/>
+	<parameter name="ESCALA_TITULOS" class="java.util.List"/>
+	<parameter name="ESCALA_RUBRICAS" class="java.util.List"/>
+	<parameter name="MATRIZ_PARES" class="java.util.List"/>
+	<parameter name="SUB_ITEMS" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_MATRIZ" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="SUB_RANGOS" class="net.sf.jasperreports.engine.JasperReport"/>
+	<parameter name="ENCABEZADO" class="java.lang.String">
+		<defaultValueExpression><![CDATA["static/fichas/encabezado-institucional.png"]]></defaultValueExpression>
+	</parameter>
+	<field name="nombre" class="java.lang.String"/>
+	<field name="items" class="java.util.List"/>
+	<field name="matriz" class="java.util.List"/>
+	<group name="dimension" minHeightToStartNewPage="110">
+		<expression><![CDATA[$V{REPORT_COUNT}]]></expression>
+		<groupHeader>
+			<band height="28">
+				<!-- Si quedan menos de 110 pt en la página, la dimensión empieza en la siguiente: el título no queda solo. -->
+				<element kind="textField" x="0" y="12" width="533" height="14" textAdjust="StretchHeight" style="Seccion">
+					<expression><![CDATA[$F{nombre} == null ? "" : $F{nombre}.toUpperCase()]]></expression>
+				</element>
+			</band>
+		</groupHeader>
+	</group>
+	<title height="198">
+		<element kind="image" x="0" y="0" width="533" height="76" scaleImage="RetainShape" hImageAlign="Center" vImageAlign="Top">
+			<expression><![CDATA[$P{ENCABEZADO}]]></expression>
+		</element>
+		<element kind="textField" positionType="Float" x="0" y="86" width="533" height="20" fontSize="13.5" bold="true" hTextAlign="Center" textAdjust="StretchHeight">
+			<expression><![CDATA[$P{NOMBRE} == null ? "" : $P{NOMBRE}.toUpperCase()]]></expression>
+		</element>
+		<element kind="textField" positionType="Float" x="0" y="108" width="533" height="15" removeLineWhenBlank="true" fontSize="10.0" bold="true" hTextAlign="Center" textAdjust="StretchHeight">
+			<printWhenExpression><![CDATA[$P{DISTINTIVO} != null && !$P{DISTINTIVO}.isEmpty()]]></printWhenExpression>
+			<expression><![CDATA[$P{DISTINTIVO}]]></expression>
+		</element>
+		<element kind="textField" positionType="Float" x="0" y="130" width="533" height="12" removeLineWhenBlank="true" fontSize="7.5" markup="styled" textAdjust="StretchHeight">
+			<printWhenExpression><![CDATA[$P{NORMA} != null && !$P{NORMA}.isEmpty()]]></printWhenExpression>
+			<expression><![CDATA["<b>Norma de respaldo:</b> " + net.sf.jasperreports.engine.util.JRStringUtil.xmlEncode($P{NORMA})]]></expression>
+		</element>
+		<element kind="staticText" positionType="Float" x="0" y="148" width="533" height="14" style="Seccion">
+			<text><![CDATA[ESCALA DE VALORACIÓN]]></text>
+		</element>
+		<element kind="frame" positionType="Float" x="0" y="164" width="533" height="34">
+			<element kind="textField" x="0" y="0" width="133" height="16" italic="true" hTextAlign="Center" vTextAlign="Middle" style="Celda">
+				<expression><![CDATA[$P{ESCALA_TITULOS}.size() > 0 ? $P{ESCALA_TITULOS}.get(0) : ""]]></expression>
+			</element>
+			<element kind="textField" x="133" y="0" width="133" height="16" italic="true" hTextAlign="Center" vTextAlign="Middle" style="Celda">
+				<expression><![CDATA[$P{ESCALA_TITULOS}.size() > 1 ? $P{ESCALA_TITULOS}.get(1) : ""]]></expression>
+			</element>
+			<element kind="textField" x="266" y="0" width="133" height="16" italic="true" hTextAlign="Center" vTextAlign="Middle" style="Celda">
+				<expression><![CDATA[$P{ESCALA_TITULOS}.size() > 2 ? $P{ESCALA_TITULOS}.get(2) : ""]]></expression>
+			</element>
+			<element kind="textField" x="399" y="0" width="134" height="16" italic="true" hTextAlign="Center" vTextAlign="Middle" style="Celda">
+				<expression><![CDATA[$P{ESCALA_TITULOS}.size() > 3 ? $P{ESCALA_TITULOS}.get(3) : ""]]></expression>
+			</element>
+			<element kind="textField" x="0" y="16" width="133" height="18" stretchType="ContainerHeight" hTextAlign="Center" textAdjust="StretchHeight" style="Celda">
+				<expression><![CDATA[$P{ESCALA_RUBRICAS}.size() > 0 ? $P{ESCALA_RUBRICAS}.get(0) : ""]]></expression>
+			</element>
+			<element kind="textField" x="133" y="16" width="133" height="18" stretchType="ContainerHeight" hTextAlign="Center" textAdjust="StretchHeight" style="Celda">
+				<expression><![CDATA[$P{ESCALA_RUBRICAS}.size() > 1 ? $P{ESCALA_RUBRICAS}.get(1) : ""]]></expression>
+			</element>
+			<element kind="textField" x="266" y="16" width="133" height="18" stretchType="ContainerHeight" hTextAlign="Center" textAdjust="StretchHeight" style="Celda">
+				<expression><![CDATA[$P{ESCALA_RUBRICAS}.size() > 2 ? $P{ESCALA_RUBRICAS}.get(2) : ""]]></expression>
+			</element>
+			<element kind="textField" x="399" y="16" width="134" height="18" stretchType="ContainerHeight" hTextAlign="Center" textAdjust="StretchHeight" style="Celda">
+				<expression><![CDATA[$P{ESCALA_RUBRICAS}.size() > 3 ? $P{ESCALA_RUBRICAS}.get(3) : ""]]></expression>
+			</element>
+		</element>
+	</title>
+	<detail>
+		<band height="20">
+			<element kind="subreport" x="0" y="0" width="533" height="20">
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRMapCollectionDataSource($F{items})]]></dataSourceExpression>
+				<expression><![CDATA[$P{SUB_ITEMS}]]></expression>
+			</element>
+		</band>
+	</detail>
+	<summary height="44">
+		<element kind="staticText" x="0" y="14" width="533" height="14" style="Seccion">
+			<text><![CDATA[MATRIZ DE PUNTAJES POR DIMENSIÓN]]></text>
+		</element>
+		<element kind="subreport" positionType="Float" x="0" y="32" width="533" height="12">
+			<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRMapCollectionDataSource($P{MATRIZ_PARES})]]></dataSourceExpression>
+			<expression><![CDATA[$P{SUB_MATRIZ}]]></expression>
+			<parameter name="SUB_RANGOS">
+				<expression><![CDATA[$P{SUB_RANGOS}]]></expression>
+			</parameter>
+		</element>
+	</summary>
+</jasperReport>

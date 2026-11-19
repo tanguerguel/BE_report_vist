@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Matriz de una dimensión: nivel, rango de puntaje y casilla para el puntaje. -->
+<jasperReport name="ficha_rangos" language="java" pageWidth="260" pageHeight="842" columnWidth="260" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" whenNoDataType="AllSectionsNoDetail">
+	<style name="Base" default="true" fontName="DejaVu Sans" fontSize="8.0"/>
+	<style name="Celda" fontName="DejaVu Sans" fontSize="8.0">
+		<box topPadding="3" leftPadding="4" bottomPadding="3" rightPadding="4">
+			<pen lineWidth="0.75" lineColor="#111111"/>
+		</box>
+	</style>
+	<style name="Cabecera" style="Celda" mode="Opaque" backcolor="#DDDDDD" bold="true"/>
+	<parameter name="DIMENSION" class="java.lang.String"/>
+	<field name="etiqueta" class="java.lang.String"/>
+	<field name="rango" class="java.lang.String"/>
+	<title height="34">
+		<element kind="textField" x="0" y="0" width="260" height="17" textAdjust="StretchHeight" style="Cabecera">
+			<expression><![CDATA[$P{DIMENSION}]]></expression>
+		</element>
+		<element kind="staticText" positionType="Float" x="0" y="17" width="87" height="17" style="Cabecera">
+			<text><![CDATA[NIVEL]]></text>
+		</element>
+		<element kind="staticText" positionType="Float" x="87" y="17" width="87" height="17" style="Cabecera">
+			<text><![CDATA[RANGO]]></text>
+		</element>
+		<element kind="staticText" positionType="Float" x="174" y="17" width="86" height="17" style="Cabecera">
+			<text><![CDATA[PUNTAJE]]></text>
+		</element>
+	</title>
+	<detail>
+		<band height="17">
+			<element kind="textField" x="0" y="0" width="87" height="17" textAdjust="StretchHeight" style="Cabecera">
+				<expression><![CDATA[$F{etiqueta} == null ? "" : $F{etiqueta}.toUpperCase()]]></expression>
+			</element>
+			<element kind="textField" x="87" y="0" width="87" height="17" stretchType="ContainerHeight" style="Celda">
+				<expression><![CDATA[$F{rango}]]></expression>
+			</element>
+			<element kind="staticText" x="174" y="0" width="86" height="17" stretchType="ContainerHeight" style="Celda">
+				<text><![CDATA[]]></text>
+			</element>
+		</band>
+	</detail>
+</jasperReport>

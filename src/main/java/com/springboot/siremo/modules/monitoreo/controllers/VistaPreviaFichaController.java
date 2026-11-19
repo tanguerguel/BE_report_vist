@@ -55,4 +55,19 @@ public class VistaPreviaFichaController extends ParentController {
                 .body(service.generarPdf(id));
     }
 
+    @GetMapping(value = "/{id}/jasper", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Hoja de una ficha en PDF A4 con JasperReports",
+            description = "Misma hoja, generada desde reportes/fichas/ficha.jrxml. Con descargar=true se descarga")
+    public ResponseEntity<byte[]> generarPdfJasper(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "false") boolean descargar
+    ) {
+        ContentDisposition disposition = (descargar ? ContentDisposition.attachment() : ContentDisposition.inline())
+                .filename("ficha-" + id + "-jasper.pdf")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(service.generarPdfJasper(id));
+    }
 }

@@ -14,4 +14,7 @@ public interface VistaPreviaFichaService {
 
     /** La hoja de la ficha en PDF A4, lista para imprimir. */
     byte[] generarPdf(UUID fichaVersionId);
+
+    /** La misma hoja en PDF A4, generada con JasperReports desde reportes/fichas/ficha.jrxml. */
+    byte[] generarPdfJasper(UUID fichaVersionId);
 }

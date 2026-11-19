@@ -15,6 +15,12 @@ public final class VistaPreviaFichaConstants {
 
     public static final String PLANTILLA = "fichas/hoja-ficha";
     public static final String PLANTILLA_MONITOREO = "fichas/hoja-monitoreo";
+    /** Plantillas JasperReports (resources/reportes/...jrxml). */
+    public static final String JASPER_FICHA = "fichas/ficha";
+    public static final String JASPER_ITEMS = "fichas/ficha_items";
+    public static final String JASPER_MATRIZ = "fichas/ficha_matriz";
+    public static final String JASPER_RANGOS = "fichas/ficha_rangos";
+
     public static final String ENCABEZADO = "static/fichas/encabezado-institucional.png";
 
     /** Niveles de logro de la escala ordinal, en orden (los mismos que muestra el front). */
