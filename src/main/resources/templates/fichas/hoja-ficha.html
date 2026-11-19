@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="${hoja.nombre}">Ficha de monitoreo</title>
+    <style th:replace="~{fichas/fragmentos :: estilos}"></style>
+</head>
+<body>
+<div class="hoja">
+    <img th:replace="~{fichas/fragmentos :: encabezado}" />
+
+    <h1 class="hoja__titulo" th:classappend="${!#strings.isEmpty(hoja.distintivo)} ? 'hoja\_\_titulo--con-distintivo'"
+        th:text="${hoja.nombre}">Ficha de monitoreo</h1>
+    <p class="hoja__distintivo" th:if="${!#strings.isEmpty(hoja.distintivo)}" th:text="${hoja.distintivo}">Distintivo</p>
+    <p class="hoja__norma" th:if="${!#strings.isEmpty(hoja.normaCodigo)}">
+        <strong>Norma de respaldo:</strong> <span th:text="${hoja.normaCodigo}">Norma</span>
+    </p>
+
+    <h2 class="hoja__seccion">Escala de valoración</h2>
+    <table class="tabla tabla--escala">
+        <thead>
+        <tr>
+            <th th:each="nivel : ${hoja.escala}" th:text="|Nivel ${nivel.nivel} (${nivel.etiqueta})|">Nivel</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td th:each="nivel : ${hoja.escala}" th:text="${nivel.rubrica}">Rúbrica</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="hoja__dimension" th:each="dimension : ${hoja.dimensiones}">
+        <h2 class="hoja__seccion" th:text="${dimension.nombre}">Dimensión</h2>
+        <table class="tabla tabla--items">
+            <colgroup>
+                <col class="tabla__item" />
+                <col class="tabla__nivel" th:each="nivel : ${niveles}" />
+                <col class="tabla__observacion" />
+            </colgroup>
+            <thead>
+            <tr>
+                <th rowspan="2">ÍTEMS</th>
+                <th colspan="4">NIVEL</th>
+                <th rowspan="2">OBSERVACIONES</th>
+            </tr>
+            <tr>
+                <th th:each="nivel : ${niveles}" th:text="${nivel}">1</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, estado : ${dimension.items}">
+                <td class="tabla__enunciado"><strong th:text="|${estado.count}.|">1.</strong> <span th:text="${item.enunciado}">Enunciado</span></td>
+                <td class="tabla__casilla" th:each="nivel : ${niveles}"></td>
+                <td class="tabla__casilla"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="hoja__seccion">Matriz de puntajes por dimensión</h2>
+    <table class="puntajes">
+        <tr class="puntajes__fila" th:each="fila : ${filasPuntajes}">
+            <td th:each="dimension, posicion : ${fila}" class="puntajes__celda"
+                th:classappend="${posicion.even} ? 'puntajes\_\_celda--derecha' : 'puntajes\_\_celda--izquierda'">
+                <table class="tabla tabla--puntajes">
+                    <thead>
+                    <tr>
+                        <th colspan="3" th:text="${dimension.nombre}">Dimensión</th>
+                    </tr>
+                    <tr>
+                        <th>NIVEL</th>
+                        <th>RANGO</th>
+                        <th>PUNTAJE</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="rango : ${dimension.matriz}">
+                        <th th:text="${rango.etiqueta}">Inicio</th>
+                        <td th:text="${rango.rangoTexto()}">5–7</td>
+                        <td></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td class="puntajes__celda puntajes__celda--derecha" th:if="${#lists.size(fila) == 1}"></td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

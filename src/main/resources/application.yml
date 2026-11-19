@@ -1,0 +1,42 @@
+server:
+  address: 0.0.0.0
+  port: ${PORT:7291}
+
+spring:
+  application:
+    name: siremo-vista-previa
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    # Solo lectura: el servicio nunca escribe en la base.
+    hikari:
+      read-only: true
+      maximum-pool-size: 3
+      connection-init-sql: SET default_transaction_read_only = on
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: ${THYMELEAF_CACHE:false}
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none
+    filter: true
+  show-actuator: false
+
+openapi-server-url: ${OPENAPI_SERVER_URL:localhost}
+
+production: ${PRODUCTION:false}

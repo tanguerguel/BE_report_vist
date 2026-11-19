@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="${hoja.titulo}">Ficha aplicada</title>
+    <style th:replace="~{fichas/fragmentos :: estilos}"></style>
+    <style>
+        /* Lo que la ficha aplicada añade a la hoja de la ficha en blanco (vista-previa-aplicacion.css). */
+
+        /* Datos de identificación: pares «etiqueta: valor» en dos columnas. */
+        .datos {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .datos th,
+        .datos td {
+            padding: 5px 6px;
+            border: 1px solid #111;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        .datos th {
+            width: 20%;
+            background: #ddd;
+        }
+
+        .datos td {
+            width: 30%;
+        }
+
+        .datos tr {
+            page-break-inside: avoid;
+        }
+
+        .tabla__marca {
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .tabla tfoot th {
+            text-align: right;
+        }
+
+        .tabla tfoot td {
+            font-weight: bold;
+        }
+
+        .hoja__texto {
+            margin: 0 0 12px;
+            white-space: pre-wrap;
+        }
+
+        .tabla--compromisos {
+            margin-top: 16px;
+        }
+
+        .tabla--compromisos th {
+            text-align: center;
+        }
+
+        .tabla--compromisos td {
+            height: 60px;
+            white-space: pre-wrap;
+        }
+
+        .firmas {
+            width: 100%;
+            margin-top: 16px;
+            border-collapse: separate;
+            border-spacing: 24px 0;
+            table-layout: fixed;
+            page-break-inside: avoid;
+        }
+
+        .firmas td {
+            width: 50%;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .firmas__espacio {
+            height: 80px;
+            border-bottom: 1px solid #111;
+            margin-bottom: 4px;
+        }
+
+        .firmas__nombre {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div class="hoja">
+    <img th:replace="~{fichas/fragmentos :: encabezado}" />
+
+    <h1 class="hoja__titulo" th:text="${hoja.titulo}">Ficha aplicada</h1>
+
+    <div th:each="seccion : ${filasSecciones}">
+        <h2 class="hoja__seccion" th:text="${seccion.titulo}">Datos</h2>
+        <table class="datos">
+            <tr th:each="fila : ${seccion.filas}">
+                <th:block th:each="dato : ${fila}">
+                    <th th:text="${dato.etiqueta}">Etiqueta</th>
+                    <td th:text="${dato.valor}">Valor</td>
+                </th:block>
+                <th:block th:if="${#lists.size(fila) == 1}">
+                    <th></th>
+                    <td></td>
+                </th:block>
+            </tr>
+        </table>
+    </div>
+
+    <h2 class="hoja__seccion">Escala de valoración</h2>
+    <table class="tabla tabla--escala">
+        <thead>
+        <tr>
+            <th th:each="nivel : ${hoja.escala}" th:text="|Nivel ${nivel.nivel} (${nivel.etiqueta})|">Nivel</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td th:each="nivel : ${hoja.escala}" th:text="${nivel.rubrica}">Rúbrica</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="hoja__dimension" th:each="dimension : ${hoja.dimensiones}">
+        <h2 class="hoja__seccion" th:text="${dimension.nombre}">Dimensión</h2>
+        <table class="tabla tabla--items">
+            <colgroup>
+                <col class="tabla__item" />
+                <col class="tabla__nivel" th:each="puntaje : ${dimension.puntajes}" />
+                <col class="tabla__observacion" />
+            </colgroup>
+            <thead>
+            <tr>
+                <th rowspan="2">ÍTEMS</th>
+                <th th:colspan="${#lists.size(dimension.puntajes)}">VALORACIÓN</th>
+                <th rowspan="2">OBSERVACIONES</th>
+            </tr>
+            <tr>
+                <th th:each="puntaje : ${dimension.puntajes}" th:text="${puntaje}">1</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item, estado : ${dimension.items}">
+                <td class="tabla__enunciado"><strong th:text="|${estado.count}.|">1.</strong> <span th:text="${item.enunciado}">Enunciado</span></td>
+                <td class="tabla__marca" th:each="puntaje : ${dimension.puntajes}"
+                    th:text="${item.puntaje == puntaje} ? 'X' : ''"></td>
+                <td th:text="${item.observacion}">Observación</td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+                <th>PUNTAJE TOTAL PARCIAL</th>
+                <td th:colspan="${#lists.size(dimension.puntajes) + 1}" th:text="${dimension.parcial}">Parcial</td>
+            </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <h2 class="hoja__seccion">Observaciones generales</h2>
+    <p class="hoja__texto"
+       th:text="${#strings.isEmpty(hoja.observaciones)} ? 'Sin observaciones generales.' : ${hoja.observaciones}">Observaciones</p>
+
+    <table class="tabla tabla--compromisos">
+        <thead>
+        <tr>
+            <th>COMPROMISOS DEL MONITOREADO</th>
+            <th>COMPROMISOS DEL MONITOR</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td th:text="${hoja.compromisoMonitoreado}">Compromisos</td>
+            <td th:text="${hoja.compromisoMonitor}">Compromisos</td>
+        </tr>
+        </tbody>
+    </table>
+    <p class="hoja__texto" th:if="${hoja.retorno != null}">
+        <strong>Próxima visita de cumplimiento:</strong> <span th:text="${hoja.retorno}">Fecha</span>
+    </p>
+
+    <table class="firmas">
+        <tr>
+            <td>
+                <div class="firmas__espacio"></div>
+                <strong>MONITOREADO · FIRMA Y SELLO</strong>
+                <span class="firmas__nombre" th:text="${hoja.firmaMonitoreado}">Monitoreado</span>
+            </td>
+            <td>
+                <div class="firmas__espacio"></div>
+                <strong>MONITOR · FIRMA Y SELLO</strong>
+                <span class="firmas__nombre" th:text="${hoja.firmaMonitor}">Monitor</span>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>
