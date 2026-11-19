@@ -15,11 +15,9 @@ public final class VistaPreviaFichaConstants {
 
     public static final String PLANTILLA = "fichas/hoja-ficha";
     public static final String PLANTILLA_MONITOREO = "fichas/hoja-monitoreo";
-    /** Plantillas JasperReports (resources/reportes/...jrxml). */
-    public static final String JASPER_FICHA = "fichas/ficha";
-    public static final String JASPER_ITEMS = "fichas/ficha_items";
-    public static final String JASPER_MATRIZ = "fichas/ficha_matriz";
-    public static final String JASPER_RANGOS = "fichas/ficha_rangos";
+    /** Plantillas JasperReports 6 (carpeta reportes-jasper6, copiadas al classpath al compilar). */
+    public static final String JASPER6_PLANTILLAS = "classpath:reportes-jasper6/fichas/*";
+    public static final String JASPER6_FICHA = "ficha";
 
     public static final String ENCABEZADO = "static/fichas/encabezado-institucional.png";
 

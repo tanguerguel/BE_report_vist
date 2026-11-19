@@ -13,7 +13,6 @@ import com.springboot.siremo.modules.monitoreo.utils.VistaPreviaFichaConstants;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,7 +24,7 @@ public class VistaPreviaFichaServiceImpl implements VistaPreviaFichaService {
 
     private final VistaPreviaFichaRepository repository;
     private final HojaRenderer renderer;
-    private final JasperRenderer jasper;
+    private final Jasper6Renderer jasper;
 
     @Override
     public HojaFichaResponse obtenerHoja(UUID fichaVersionId) {
@@ -71,45 +70,11 @@ public class VistaPreviaFichaServiceImpl implements VistaPreviaFichaService {
     }
 
     @Override
-    public byte[] generarPdfJasper(UUID fichaVersionId) {
-        HojaFichaResponse hoja = obtenerHoja(fichaVersionId);
-
-        List<Map<String, ?>> dimensiones = hoja.dimensiones().stream()
-                .<Map<String, ?>>map(d -> Map.of(
-                        "nombre", d.nombre(),
-                        "items", d.items().stream()
-                                .<Map<String, ?>>map(i -> Map.of("orden", i.orden(), "enunciado", i.enunciado()))
-                                .toList(),
-                        "matriz", d.matriz().stream()
-                                .<Map<String, ?>>map(r -> Map.of("etiqueta", r.etiqueta(), "rango", r.rangoTexto()))
-                                .toList()))
-                .toList();
-
-        Map<String, Object> parametros = new HashMap<>();
-        parametros.put("NOMBRE", hoja.nombre());
-        parametros.put("DISTINTIVO", hoja.distintivo());
-        parametros.put("NORMA", hoja.normaCodigo());
-        parametros.put("ESCALA_TITULOS", hoja.escala().stream()
-                .map(n -> "Nivel " + n.nivel() + " (" + n.etiqueta() + ")").toList());
-        parametros.put("ESCALA_RUBRICAS", hoja.escala().stream()
-                .map(n -> n.rubrica() == null ? "" : n.rubrica()).toList());
-        parametros.put("MATRIZ_PARES", HojaUtils.enPares(dimensiones).stream()
-                .<Map<String, ?>>map(par -> {
-                    Map<String, Object> fila = new HashMap<>();
-                    fila.put("izquierdaNombre", par.getFirst().get("nombre"));
-                    fila.put("izquierdaMatriz", par.getFirst().get("matriz"));
-                    if (par.size() > 1) {
-                        fila.put("derechaNombre", par.get(1).get("nombre"));
-                        fila.put("derechaMatriz", par.get(1).get("matriz"));
-                    }
-                    return fila;
-                })
-                .toList());
-        parametros.put("SUB_ITEMS", jasper.reporte(VistaPreviaFichaConstants.JASPER_ITEMS));
-        parametros.put("SUB_MATRIZ", jasper.reporte(VistaPreviaFichaConstants.JASPER_MATRIZ));
-        parametros.put("SUB_RANGOS", jasper.reporte(VistaPreviaFichaConstants.JASPER_RANGOS));
-
-        return jasper.pdf(VistaPreviaFichaConstants.JASPER_FICHA, parametros, dimensiones);
+    public byte[] generarPdfJasper6(UUID fichaVersionId) {
+        repository.findFicha(fichaVersionId)
+                .orElseThrow(() -> new ResourceNotFoundException(VistaPreviaFichaConstants.NO_ENCONTRADA));
+        // La plantilla consulta la base por su cuenta; solo necesita el id.
+        return jasper.pdf(VistaPreviaFichaConstants.JASPER6_FICHA, Map.of("FICHA_VERSION_ID", fichaVersionId.toString()));
     }
 
     private Map<UUID, List<RangoNivelResponse>> matricesPorDimension(UUID fichaVersionId) {

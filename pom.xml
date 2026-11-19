@@ -16,7 +16,7 @@
     <properties>
         <java.version>25</java.version>
         <openhtmltopdf.version>1.1.114</openhtmltopdf.version>
-        <jasperreports.version>7.0.3</jasperreports.version>
+        <jasperreports.version>6.21.5</jasperreports.version>
     </properties>
 
     <dependencies>
@@ -56,20 +56,10 @@
             <version>${openhtmltopdf.version}</version>
         </dependency>
 
-        <!-- JasperReports: la misma hoja desde plantillas .jrxml -->
+        <!-- JasperReports 6.21.5: plantillas de reportes-jasper6 (Jaspersoft Studio 6.21.5) -->
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
-            <version>${jasperreports.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jasperreports</groupId>
-            <artifactId>jasperreports-pdf</artifactId>
-            <version>${jasperreports.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jasperreports</groupId>
-            <artifactId>jasperreports-jdt</artifactId>
             <version>${jasperreports.version}</version>
         </dependency>
         <dependency>
@@ -86,6 +76,19 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>reportes-jasper6/fichas</directory>
+                <targetPath>reportes-jasper6/fichas</targetPath>
+                <includes>
+                    <include>*.jrxml</include>
+                    <include>*.png</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
