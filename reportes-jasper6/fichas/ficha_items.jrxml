@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Tabla de ítems de una dimensión: enunciado, casillas de nivel 1 a 4 y observaciones. La cabecera se repite en cada página. -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ficha_items" language="java" pageWidth="533" pageHeight="842" columnWidth="533" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="siremo-postgres.xml"/>
+	<style name="Base" isDefault="true" fontName="DejaVu Sans" fontSize="8"/>
+	<style name="Celda" fontName="DejaVu Sans" fontSize="8">
+		<box topPadding="3" leftPadding="4" bottomPadding="3" rightPadding="4">
+			<pen lineWidth="0.75" lineColor="#111111"/>
+		</box>
+	</style>
+	<style name="Cabecera" style="Celda" mode="Opaque" backcolor="#DDDDDD" hTextAlign="Center" vTextAlign="Middle" isBold="true"/>
+	<parameter name="DIMENSION_ID" class="java.lang.String">
+		<parameterDescription><![CDATA[Id (uuid) de siremo_v3.ficha_dimension]]></parameterDescription>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT it.orden, it.enunciado
+  FROM siremo_v3.ficha_item it
+ WHERE it.dimension_id = CAST($P{DIMENSION_ID} AS uuid)
+ ORDER BY it.orden]]>
+	</queryString>
+	<field name="orden" class="java.lang.Integer"/>
+	<field name="enunciado" class="java.lang.String"/>
+	<columnHeader>
+		<band height="34" splitType="Stretch">
+			<staticText>
+				<reportElement style="Cabecera" x="0" y="0" width="298" height="34"/>
+				<text><![CDATA[ÍTEMS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" x="298" y="0" width="108" height="17"/>
+				<text><![CDATA[NIVEL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" x="298" y="17" width="27" height="17"/>
+				<text><![CDATA[1]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" x="325" y="17" width="27" height="17"/>
+				<text><![CDATA[2]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" x="352" y="17" width="27" height="17"/>
+				<text><![CDATA[3]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" x="379" y="17" width="27" height="17"/>
+				<text><![CDATA[4]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" x="406" y="0" width="127" height="34"/>
+				<text><![CDATA[OBSERVACIONES]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="30" splitType="Prevent">
+			<textField textAdjust="StretchHeight">
+				<reportElement style="Celda" x="0" y="0" width="298" height="30"/>
+				<textElement markup="styled"/>
+				<textFieldExpression><![CDATA["<b>" + $V{REPORT_COUNT} + ".</b> " + net.sf.jasperreports.engine.util.JRStringUtil.xmlEncode($F{enunciado})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="298" y="0" width="27" height="30"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="325" y="0" width="27" height="30"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="352" y="0" width="27" height="30"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="379" y="0" width="27" height="30"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="406" y="0" width="127" height="30"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

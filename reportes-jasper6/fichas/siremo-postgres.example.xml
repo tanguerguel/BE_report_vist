@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Copiar como siremo-postgres.xml (no se versiona) y completar HOST y USUARIO. La clave no se guarda: Studio la pide al previsualizar. La conexión abre en solo lectura. -->
+<jdbcDataAdapter class="net.sf.jasperreports.data.jdbc.JdbcDataAdapterImpl">
+	<name>SIREMO PostgreSQL</name>
+	<driver>org.postgresql.Driver</driver>
+	<username>USUARIO</username>
+	<savePassword>false</savePassword>
+	<url>jdbc:postgresql://HOST:5432/db_siremo_dev?options=-c%20default_transaction_read_only=on</url>
+	<database></database>
+	<serverAddress></serverAddress>
+	<classpath/>
+</jdbcDataAdapter>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Matriz de una dimensión (ficha_dimension.matriz_niveles): nivel, rango de puntaje y casilla para el puntaje. -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ficha_rangos" language="java" pageWidth="260" pageHeight="842" whenNoDataType="AllSectionsNoDetail" columnWidth="260" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="siremo-postgres.xml"/>
+	<style name="Base" isDefault="true" fontName="DejaVu Sans" fontSize="8"/>
+	<style name="Celda" fontName="DejaVu Sans" fontSize="8">
+		<box topPadding="3" leftPadding="4" bottomPadding="3" rightPadding="4">
+			<pen lineWidth="0.75" lineColor="#111111"/>
+		</box>
+	</style>
+	<style name="Cabecera" style="Celda" mode="Opaque" backcolor="#DDDDDD" isBold="true"/>
+	<parameter name="DIMENSION_ID" class="java.lang.String">
+		<parameterDescription><![CDATA[Id (uuid) de siremo_v3.ficha_dimension]]></parameterDescription>
+	</parameter>
+	<parameter name="DIMENSION" class="java.lang.String">
+		<parameterDescription><![CDATA[Nombre de la dimensión]]></parameterDescription>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[SELECT r ->> 'etiqueta' AS etiqueta,
+       CASE WHEN r ->> 'minimo' IS NULL OR r ->> 'maximo' IS NULL THEN 'Sin rango'
+            ELSE trim_scale((r ->> 'minimo')::numeric)::text || '–' || trim_scale((r ->> 'maximo')::numeric)::text
+       END AS rango
+  FROM siremo_v3.ficha_dimension d
+ CROSS JOIN LATERAL jsonb_array_elements(coalesce(d.matriz_niveles, '[]'::jsonb)) r
+ WHERE d.id = CAST($P{DIMENSION_ID} AS uuid)
+ ORDER BY (r ->> 'nivel')::int]]>
+	</queryString>
+	<field name="etiqueta" class="java.lang.String"/>
+	<field name="rango" class="java.lang.String"/>
+	<title>
+		<band height="34" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement style="Cabecera" x="0" y="0" width="260" height="17"/>
+				<textFieldExpression><![CDATA[$P{DIMENSION} == null ? "" : $P{DIMENSION}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Cabecera" positionType="Float" x="0" y="17" width="87" height="17"/>
+				<text><![CDATA[NIVEL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" positionType="Float" x="87" y="17" width="87" height="17"/>
+				<text><![CDATA[RANGO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Cabecera" positionType="Float" x="174" y="17" width="86" height="17"/>
+				<text><![CDATA[PUNTAJE]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="17" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement style="Cabecera" x="0" y="0" width="87" height="17"/>
+				<textFieldExpression><![CDATA[$F{etiqueta} == null ? "" : $F{etiqueta}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="87" y="0" width="87" height="17"/>
+				<textFieldExpression><![CDATA[$F{rango}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Celda" stretchType="ContainerHeight" x="174" y="0" width="86" height="17"/>
+				<text><![CDATA[]]></text>
+			</staticText>
+		</band>
+	</detail>
+</jasperReport>

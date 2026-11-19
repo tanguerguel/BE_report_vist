@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hoja de la ficha de monitoreo en blanco. Una fila por dimensión; los datos de la ficha se repiten en cada fila. -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ficha" language="java" pageWidth="595" pageHeight="842" columnWidth="533" leftMargin="31" rightMargin="31" topMargin="34" bottomMargin="34">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="siremo-postgres.xml"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<style name="Base" isDefault="true" fontName="DejaVu Sans" fontSize="8"/>
+	<style name="Seccion" fontName="DejaVu Sans" fontSize="9.5" isBold="true"/>
+	<style name="Celda" fontName="DejaVu Sans" fontSize="8">
+		<box topPadding="3" leftPadding="4" bottomPadding="3" rightPadding="4">
+			<pen lineWidth="0.75" lineColor="#111111"/>
+		</box>
+	</style>
+	<style name="Escala" style="Celda" hTextAlign="Center" vTextAlign="Middle" isItalic="true"/>
+	<parameter name="FICHA_VERSION_ID" class="java.lang.String">
+		<parameterDescription><![CDATA[Id (uuid) de siremo_v3.ficha_version]]></parameterDescription>
+	</parameter>
+	<parameter name="ENCABEZADO" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["encabezado-institucional.png"]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[WITH f AS (
+    SELECT v.id, i.nombre, i.permite_varias_publicadas, v.denominacion, v.norma_codigo,
+           array_remove(ARRAY[
+               CASE WHEN 'INICIAL' = ANY (v.niveles) THEN 'Inicial' END,
+               CASE WHEN 'PRIMARIA' = ANY (v.niveles) THEN 'Primaria' END,
+               CASE WHEN 'SECUNDARIA' = ANY (v.niveles) THEN 'Secundaria' END], NULL) AS niveles
+      FROM siremo_v3.ficha_version v
+      JOIN siremo_v3.instrumento i ON i.id = v.instrumento_id
+     WHERE v.id = CAST($P{FICHA_VERSION_ID} AS uuid)
+), escala AS (
+    SELECT r ->> 'rubrica' AS rubrica, (r ->> 'nivel')::int AS nivel
+      FROM (SELECT d.matriz_niveles
+              FROM siremo_v3.ficha_dimension d
+              JOIN f ON f.id = d.ficha_version_id
+             ORDER BY d.orden
+             LIMIT 1) primera
+     CROSS JOIN LATERAL jsonb_array_elements(coalesce(primera.matriz_niveles, '[]'::jsonb)) r
+)
+SELECT f.nombre AS ficha_nombre,
+       CASE WHEN f.permite_varias_publicadas THEN nullif(concat_ws(' · ',
+           CASE cardinality(f.niveles)
+               WHEN 0 THEN NULL
+               WHEN 1 THEN f.niveles[1]
+               ELSE array_to_string(f.niveles[1:cardinality(f.niveles) - 1], ', ') || ' y ' || f.niveles[cardinality(f.niveles)]
+           END,
+           nullif(trim(f.denominacion), '')), '') END AS distintivo,
+       f.norma_codigo,
+       (SELECT rubrica FROM escala WHERE nivel = 1) AS rubrica_1,
+       (SELECT rubrica FROM escala WHERE nivel = 2) AS rubrica_2,
+       (SELECT rubrica FROM escala WHERE nivel = 3) AS rubrica_3,
+       (SELECT rubrica FROM escala WHERE nivel = 4) AS rubrica_4,
+       d.id::text AS dimension_id,
+       d.nombre AS dimension_nombre
+  FROM f
+  JOIN siremo_v3.ficha_dimension d ON d.ficha_version_id = f.id
+ ORDER BY d.orden]]>
+	</queryString>
+	<field name="ficha_nombre" class="java.lang.String"/>
+	<field name="distintivo" class="java.lang.String"/>
+	<field name="norma_codigo" class="java.lang.String"/>
+	<field name="rubrica_1" class="java.lang.String"/>
+	<field name="rubrica_2" class="java.lang.String"/>
+	<field name="rubrica_3" class="java.lang.String"/>
+	<field name="rubrica_4" class="java.lang.String"/>
+	<field name="dimension_id" class="java.lang.String"/>
+	<field name="dimension_nombre" class="java.lang.String"/>
+	<group name="dimension" minHeightToStartNewPage="110">
+		<groupExpression><![CDATA[$F{dimension_id}]]></groupExpression>
+		<groupHeader>
+			<band height="28">
+				<!-- Si quedan menos de 110 pt en la página, la dimensión empieza en la siguiente: su título no queda solo. -->
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Seccion" x="0" y="12" width="533" height="14"/>
+					<textFieldExpression><![CDATA[$F{dimension_nombre} == null ? "" : $F{dimension_nombre}.toUpperCase()]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+	</group>
+	<title>
+		<band height="198" splitType="Stretch">
+			<image scaleImage="RetainShape" hAlign="Center" vAlign="Top">
+				<reportElement x="0" y="0" width="533" height="76"/>
+				<imageExpression><![CDATA[$P{ENCABEZADO}]]></imageExpression>
+			</image>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="0" y="86" width="533" height="20"/>
+				<textElement textAlignment="Center">
+					<font size="13.5" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{ficha_nombre} == null ? "" : $F{ficha_nombre}.toUpperCase()]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="0" y="108" width="533" height="15" isRemoveLineWhenBlank="true">
+					<printWhenExpression><![CDATA[$F{distintivo} != null]]></printWhenExpression>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font size="10" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{distintivo}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement positionType="Float" x="0" y="130" width="533" height="12" isRemoveLineWhenBlank="true">
+					<printWhenExpression><![CDATA[$F{norma_codigo} != null && !$F{norma_codigo}.isEmpty()]]></printWhenExpression>
+				</reportElement>
+				<textElement markup="styled">
+					<font size="7.5"/>
+				</textElement>
+				<textFieldExpression><![CDATA["<b>Norma de respaldo:</b> " + net.sf.jasperreports.engine.util.JRStringUtil.xmlEncode($F{norma_codigo})]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Seccion" positionType="Float" x="0" y="148" width="533" height="14"/>
+				<text><![CDATA[ESCALA DE VALORACIÓN]]></text>
+			</staticText>
+			<frame>
+				<reportElement positionType="Float" x="0" y="164" width="533" height="34"/>
+				<staticText>
+					<reportElement style="Escala" x="0" y="0" width="133" height="16"/>
+					<text><![CDATA[Nivel 1 (Inicio)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Escala" x="133" y="0" width="133" height="16"/>
+					<text><![CDATA[Nivel 2 (En proceso)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Escala" x="266" y="0" width="133" height="16"/>
+					<text><![CDATA[Nivel 3 (Satisfactorio)]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Escala" x="399" y="0" width="134" height="16"/>
+					<text><![CDATA[Nivel 4 (Destacado)]]></text>
+				</staticText>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Celda" stretchType="ContainerHeight" x="0" y="16" width="133" height="18"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{rubrica_1} == null ? "" : $F{rubrica_1}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Celda" stretchType="ContainerHeight" x="133" y="16" width="133" height="18"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{rubrica_2} == null ? "" : $F{rubrica_2}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Celda" stretchType="ContainerHeight" x="266" y="16" width="133" height="18"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{rubrica_3} == null ? "" : $F{rubrica_3}]]></textFieldExpression>
+				</textField>
+				<textField textAdjust="StretchHeight">
+					<reportElement style="Celda" stretchType="ContainerHeight" x="399" y="16" width="134" height="18"/>
+					<textElement textAlignment="Center"/>
+					<textFieldExpression><![CDATA[$F{rubrica_4} == null ? "" : $F{rubrica_4}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</title>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="533" height="20"/>
+				<subreportParameter name="DIMENSION_ID">
+					<subreportParameterExpression><![CDATA[$F{dimension_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA["ficha_items.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<summary>
+		<band height="44" splitType="Stretch">
+			<staticText>
+				<reportElement style="Seccion" x="0" y="14" width="533" height="14"/>
+				<text><![CDATA[MATRIZ DE PUNTAJES POR DIMENSIÓN]]></text>
+			</staticText>
+			<subreport>
+				<reportElement positionType="Float" x="0" y="32" width="533" height="12"/>
+				<subreportParameter name="FICHA_VERSION_ID">
+					<subreportParameterExpression><![CDATA[$P{FICHA_VERSION_ID}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA["ficha_matriz.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</summary>
+</jasperReport>

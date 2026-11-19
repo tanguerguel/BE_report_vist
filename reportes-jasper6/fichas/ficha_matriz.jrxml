@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Matriz de puntajes: dos dimensiones por fila (la de la derecha puede faltar en la última fila). -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ficha_matriz" language="java" pageWidth="533" pageHeight="842" columnWidth="533" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="siremo-postgres.xml"/>
+	<style name="Base" isDefault="true" fontName="DejaVu Sans" fontSize="8"/>
+	<parameter name="FICHA_VERSION_ID" class="java.lang.String">
+		<parameterDescription><![CDATA[Id (uuid) de siremo_v3.ficha_version]]></parameterDescription>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[WITH d AS (
+    SELECT id, nombre, row_number() OVER (ORDER BY orden) - 1 AS n
+      FROM siremo_v3.ficha_dimension
+     WHERE ficha_version_id = CAST($P{FICHA_VERSION_ID} AS uuid)
+)
+SELECT a.id::text AS izquierda_id, a.nombre AS izquierda_nombre,
+       b.id::text AS derecha_id, b.nombre AS derecha_nombre
+  FROM d a
+  LEFT JOIN d b ON b.n = a.n + 1
+ WHERE a.n % 2 = 0
+ ORDER BY a.n]]>
+	</queryString>
+	<field name="izquierda_id" class="java.lang.String"/>
+	<field name="izquierda_nombre" class="java.lang.String"/>
+	<field name="derecha_id" class="java.lang.String"/>
+	<field name="derecha_nombre" class="java.lang.String"/>
+	<detail>
+		<band height="30" splitType="Prevent">
+			<subreport>
+				<reportElement x="0" y="0" width="260" height="20"/>
+				<subreportParameter name="DIMENSION_ID">
+					<subreportParameterExpression><![CDATA[$F{izquierda_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DIMENSION">
+					<subreportParameterExpression><![CDATA[$F{izquierda_nombre}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA["ficha_rangos.jasper"]]></subreportExpression>
+			</subreport>
+			<subreport>
+				<reportElement x="273" y="0" width="260" height="20">
+					<printWhenExpression><![CDATA[$F{derecha_id} != null]]></printWhenExpression>
+				</reportElement>
+				<subreportParameter name="DIMENSION_ID">
+					<subreportParameterExpression><![CDATA[$F{derecha_id}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DIMENSION">
+					<subreportParameterExpression><![CDATA[$F{derecha_nombre}]]></subreportParameterExpression>
+				</subreportParameter>
+				<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+				<subreportExpression><![CDATA["ficha_rangos.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+</jasperReport>

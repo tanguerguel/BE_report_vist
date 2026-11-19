@@ -1,0 +1,5 @@
+# Compilados de Jaspersoft Studio
+*.jasper
+# Adaptador con credenciales: se crea desde siremo-postgres.example.xml
+fichas/siremo-postgres.xml
+.settings/
