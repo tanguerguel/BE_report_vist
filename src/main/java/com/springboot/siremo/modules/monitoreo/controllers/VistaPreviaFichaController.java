@@ -70,4 +70,20 @@ public class VistaPreviaFichaController extends ParentController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(service.generarPdfJasper6(id));
     }
+
+    @GetMapping(value = "/{id}/itext", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Hoja de una ficha en PDF A4 con iText 7",
+            description = "Misma hoja, armada por código con la API de Layout de iText 7. Con descargar=true se descarga")
+    public ResponseEntity<byte[]> generarPdfItext(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "false") boolean descargar
+    ) {
+        ContentDisposition disposition = (descargar ? ContentDisposition.attachment() : ContentDisposition.inline())
+                .filename("ficha-" + id + "-itext.pdf")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(service.generarPdfItext(id));
+    }
 }

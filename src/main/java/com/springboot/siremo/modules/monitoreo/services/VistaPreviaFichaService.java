@@ -17,4 +17,7 @@ public interface VistaPreviaFichaService {
 
     /** La misma hoja en PDF A4, generada con JasperReports 6 desde reportes-jasper6/fichas/ficha.jrxml. */
     byte[] generarPdfJasper6(UUID fichaVersionId);
+
+    /** La misma hoja en PDF A4, armada por código con iText 7 (API de Layout). */
+    byte[] generarPdfItext(UUID fichaVersionId);
 }

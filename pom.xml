@@ -17,6 +17,7 @@
         <java.version>25</java.version>
         <openhtmltopdf.version>1.1.114</openhtmltopdf.version>
         <jasperreports.version>6.21.5</jasperreports.version>
+        <itext.version>7.2.7</itext.version>
     </properties>
 
     <dependencies>
@@ -66,6 +67,13 @@
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports-fonts</artifactId>
             <version>${jasperreports.version}</version>
+        </dependency>
+
+        <!-- iText 7 (licencia AGPL): hoja de la ficha armada por código con su API de Layout -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>${itext.version}</version>
         </dependency>
 
         <dependency>

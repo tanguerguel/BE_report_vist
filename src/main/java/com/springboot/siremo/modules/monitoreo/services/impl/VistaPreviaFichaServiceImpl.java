@@ -25,6 +25,7 @@ public class VistaPreviaFichaServiceImpl implements VistaPreviaFichaService {
     private final VistaPreviaFichaRepository repository;
     private final HojaRenderer renderer;
     private final Jasper6Renderer jasper;
+    private final ItextRenderer itext;
 
     @Override
     public HojaFichaResponse obtenerHoja(UUID fichaVersionId) {
@@ -75,6 +76,11 @@ public class VistaPreviaFichaServiceImpl implements VistaPreviaFichaService {
                 .orElseThrow(() -> new ResourceNotFoundException(VistaPreviaFichaConstants.NO_ENCONTRADA));
         // La plantilla consulta la base por su cuenta; solo necesita el id.
         return jasper.pdf(VistaPreviaFichaConstants.JASPER6_FICHA, Map.of("FICHA_VERSION_ID", fichaVersionId.toString()));
+    }
+
+    @Override
+    public byte[] generarPdfItext(UUID fichaVersionId) {
+        return itext.pdf(obtenerHoja(fichaVersionId));
     }
 
     private Map<UUID, List<RangoNivelResponse>> matricesPorDimension(UUID fichaVersionId) {
