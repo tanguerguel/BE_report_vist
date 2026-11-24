@@ -29,11 +29,16 @@ import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
 import com.itextpdf.layout.renderer.IRenderer;
+import com.springboot.siremo.modules.monitoreo.dto.response.DatoHojaResponse;
+import com.springboot.siremo.modules.monitoreo.dto.response.DimensionAplicadaResponse;
 import com.springboot.siremo.modules.monitoreo.dto.response.DimensionHojaResponse;
 import com.springboot.siremo.modules.monitoreo.dto.response.EscalaNivelResponse;
 import com.springboot.siremo.modules.monitoreo.dto.response.HojaFichaResponse;
+import com.springboot.siremo.modules.monitoreo.dto.response.HojaMonitoreoResponse;
+import com.springboot.siremo.modules.monitoreo.dto.response.ItemAplicadoResponse;
 import com.springboot.siremo.modules.monitoreo.dto.response.ItemHojaResponse;
 import com.springboot.siremo.modules.monitoreo.dto.response.RangoNivelResponse;
+import com.springboot.siremo.modules.monitoreo.dto.response.SeccionHojaResponse;
 import com.springboot.siremo.modules.monitoreo.utils.HojaUtils;
 import com.springboot.siremo.modules.monitoreo.utils.VistaPreviaFichaConstants;
 import org.springframework.core.io.ClassPathResource;
@@ -43,12 +48,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Arma la hoja de la ficha en PDF A4 con iText 7 (API de Layout), sin HTML: cada tabla y celda se
- * construye en código. Las medidas reproducen la hoja HTML (fragmentos.html), pasadas de px a pt (1px = 0,75pt).
+ * Arma en PDF A4 con iText 7 (API de Layout), sin HTML, la hoja de la ficha en blanco y la del monitoreo
+ * aplicado: cada tabla y celda se construye en código. Las medidas reproducen las hojas HTML
+ * (fragmentos.html y hoja-monitoreo.html), pasadas de px a pt (1px = 0,75pt).
  */
 @Component
 public class ItextRenderer {
@@ -71,6 +78,14 @@ public class ItextRenderer {
     private static final int NIVELES = 4;
     /** ÍTEMS 56 %, NIVEL 1–4 5 % cada uno, OBSERVACIONES 24 %. */
     private static final float[] ANCHOS_ITEMS = {56, 5, 5, 5, 5, 24};
+    /** Datos de identificación: etiqueta 20 %, valor 30 %, dos pares por fila. */
+    private static final float[] ANCHOS_DATOS = {20, 30, 20, 30};
+    private static final float ANCHO_ITEM = 56;
+    private static final float ANCHO_VALORACION = 5;
+    private static final float ANCHO_OBSERVACION = 24;
+    private static final float ALTO_COMPROMISO = 45;
+    private static final float ALTO_FIRMA = 60;
+    private static final float SEPARACION_FIRMAS = 18;
 
     /** El encabezado institucional, leído una sola vez. */
     private final byte[] encabezado;
@@ -83,16 +98,9 @@ public class ItextRenderer {
         }
     }
 
+    /** La ficha en blanco, para llenar a mano. */
     public byte[] pdf(HojaFichaResponse hoja) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (PdfDocument pdf = new PdfDocument(new PdfWriter(out));
-             Document documento = new Document(pdf, PageSize.A4)) {
-            pdf.getDocumentInfo().setTitle(hoja.nombre());
-            Fuentes fuentes = new Fuentes();
-            documento.setMargins(MARGEN_VERTICAL, MARGEN_HORIZONTAL, MARGEN_VERTICAL, MARGEN_HORIZONTAL);
-            documento.setFont(fuentes.normal()).setFontSize(TEXTO).setFontColor(NEGRO);
-
-            documento.add(new Image(ImageDataFactory.create(encabezado)).setAutoScale(true));
+        return documento(hoja.nombre(), (documento, fuentes) -> {
             float margenCabecera = cabecera(documento, hoja, fuentes);
             Table escala = escala(hoja.escala(), fuentes);
             seccion(documento, "Escala de valoración", Math.max(margenCabecera, 10.5f), escala, fuentes);
@@ -105,8 +113,161 @@ public class ItextRenderer {
             seccion(documento, "Matriz de puntajes por dimensión", 10.5f,
                     puntajes(hoja.dimensiones().subList(0, Math.min(2, hoja.dimensiones().size())), fuentes), fuentes);
             documento.add(puntajes(hoja.dimensiones(), fuentes));
+        });
+    }
+
+    /** El monitoreo aplicado: la ficha llenada, lista para imprimir y firmar. */
+    public byte[] pdf(HojaMonitoreoResponse hoja) {
+        return documento(hoja.titulo(), (documento, fuentes) -> {
+            // Sin margen inferior: el HTML lo superpone con el de la sección que sigue.
+            documento.add(parrafo(mayusculas(hoja.titulo()), fuentes.negrita(), TITULO)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFixedLeading(TITULO * 1.25f)
+                    .setMarginTop(9).setMarginBottom(0));
+            for (SeccionHojaResponse seccion : hoja.secciones()) {
+                List<List<DatoHojaResponse>> filas = HojaUtils.enPares(seccion.datos());
+                seccion(documento, seccion.titulo(), 10.5f, datos(filas.subList(0, Math.min(1, filas.size())), fuentes), fuentes);
+                documento.add(datos(filas, fuentes));
+            }
+            Table escala = escala(hoja.escala(), fuentes);
+            seccion(documento, "Escala de valoración", 10.5f, escala, fuentes);
+            documento.add(escala);
+            for (DimensionAplicadaResponse dimension : hoja.dimensiones()) {
+                seccion(documento, dimension.nombre(), 12,
+                        valoraciones(dimension, dimension.items().subList(0, Math.min(1, dimension.items().size())), fuentes),
+                        fuentes);
+                documento.add(valoraciones(dimension, dimension.items(), fuentes));
+            }
+            String observaciones = vacio(hoja.observaciones()) ? "Sin observaciones generales." : hoja.observaciones();
+            seccion(documento, "Observaciones generales", 10.5f, parrafo(observaciones, fuentes.normal(), TEXTO), fuentes);
+            documento.add(parrafo(observaciones, fuentes.normal(), TEXTO));
+            documento.add(compromisos(hoja, fuentes));
+            if (hoja.retorno() != null) {
+                documento.add(new Paragraph()
+                        .add(new Text("Próxima visita de cumplimiento: ").setFont(fuentes.negrita()))
+                        .add(new Text(hoja.retorno()))
+                        .setFixedLeading(TEXTO * INTERLINEADO).setMargin(0));
+            }
+            documento.add(firmas(hoja, fuentes));
+        });
+    }
+
+    /** Hoja A4 con los márgenes, la fuente y el encabezado institucional comunes; el contenido lo pone quien llama. */
+    private byte[] documento(String titulo, Contenido contenido) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try (PdfDocument pdf = new PdfDocument(new PdfWriter(out));
+             Document documento = new Document(pdf, PageSize.A4)) {
+            pdf.getDocumentInfo().setTitle(titulo);
+            Fuentes fuentes = new Fuentes();
+            documento.setMargins(MARGEN_VERTICAL, MARGEN_HORIZONTAL, MARGEN_VERTICAL, MARGEN_HORIZONTAL);
+            documento.setFont(fuentes.normal()).setFontSize(TEXTO).setFontColor(NEGRO);
+            documento.add(new Image(ImageDataFactory.create(encabezado)).setAutoScale(true));
+            contenido.agregar(documento, fuentes);
         }
         return out.toByteArray();
+    }
+
+    @FunctionalInterface
+    private interface Contenido {
+        void agregar(Document documento, Fuentes fuentes);
+    }
+
+    /** Datos de identificación en pares «etiqueta | valor»; si el último par queda solo, el resto de la fila va vacío. */
+    private static Table datos(List<List<DatoHojaResponse>> filas, Fuentes fuentes) {
+        Table tabla = tablaCompleta(UnitValue.createPercentArray(ANCHOS_DATOS));
+        for (List<DatoHojaResponse> fila : filas) {
+            for (int posicion = 0; posicion < 2; posicion++) {
+                DatoHojaResponse dato = posicion < fila.size() ? fila.get(posicion) : null;
+                tabla.addCell(celda(dato == null ? "" : dato.etiqueta(), fuentes.negrita())
+                        .setBackgroundColor(GRIS).setKeepTogether(true));
+                tabla.addCell(celda(dato == null ? "" : dato.valor(), fuentes.normal()).setKeepTogether(true));
+            }
+        }
+        return tabla;
+    }
+
+    /**
+     * Ítems de una dimensión con una columna por puntaje posible y una «X» en el marcado, y el puntaje
+     * parcial al pie. Cabecera y pie se repiten si la tabla pasa a otra página.
+     */
+    private static Table valoraciones(DimensionAplicadaResponse dimension, List<ItemAplicadoResponse> items, Fuentes fuentes) {
+        List<String> puntajes = dimension.puntajes().isEmpty() ? List.of("") : dimension.puntajes();
+        float[] anchos = new float[puntajes.size() + 2];
+        anchos[0] = ANCHO_ITEM;
+        for (int i = 1; i <= puntajes.size(); i++) {
+            anchos[i] = ANCHO_VALORACION;
+        }
+        anchos[anchos.length - 1] = ANCHO_OBSERVACION;
+
+        Table tabla = tablaCompleta(UnitValue.createPercentArray(anchos));
+        tabla.addHeaderCell(cabeceraItems("ÍTEMS", 2, 1, fuentes));
+        tabla.addHeaderCell(cabeceraItems("VALORACIÓN", 1, puntajes.size(), fuentes));
+        tabla.addHeaderCell(cabeceraItems("OBSERVACIONES", 2, 1, fuentes));
+        for (String puntaje : puntajes) {
+            tabla.addHeaderCell(cabeceraItems(puntaje, 1, 1, fuentes));
+        }
+        int numero = 0;
+        for (ItemAplicadoResponse item : items) {
+            numero++;
+            Paragraph enunciado = new Paragraph()
+                    .add(new Text(numero + ".").setFont(fuentes.negrita()))
+                    .add(new Text(" " + (item.enunciado() == null ? "" : item.enunciado())))
+                    .setFixedLeading(TEXTO * INTERLINEADO).setMargin(0);
+            // Una fila no se parte entre dos páginas.
+            tabla.addCell(celda(enunciado).setKeepTogether(true));
+            for (String puntaje : puntajes) {
+                boolean marcado = !puntaje.isEmpty() && puntaje.equals(item.puntaje());
+                tabla.addCell(celda(marcado ? "X" : "", fuentes.negrita())
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setKeepTogether(true));
+            }
+            tabla.addCell(celda(item.observacion(), fuentes.normal()).setKeepTogether(true));
+        }
+        // Como el tfoot de la hoja HTML, el pie se repite al final de cada página que ocupa la tabla.
+        tabla.addFooterCell(celda("PUNTAJE TOTAL PARCIAL", fuentes.negrita())
+                .setBackgroundColor(GRIS).setTextAlignment(TextAlignment.RIGHT));
+        tabla.addFooterCell(celda(parrafo(dimension.parcial(), fuentes.negrita(), TEXTO), puntajes.size() + 1));
+        return tabla;
+    }
+
+    /** Compromisos del monitoreado y del monitor, uno al lado del otro. */
+    private static Table compromisos(HojaMonitoreoResponse hoja, Fuentes fuentes) {
+        Table tabla = tablaCompleta(UnitValue.createPercentArray(2));
+        tabla.setMarginTop(12).setKeepTogether(true);
+        for (String titulo : List.of("COMPROMISOS DEL MONITOREADO", "COMPROMISOS DEL MONITOR")) {
+            tabla.addCell(celda(titulo, fuentes.negrita()).setBackgroundColor(GRIS).setTextAlignment(TextAlignment.CENTER));
+        }
+        tabla.addCell(celda(hoja.compromisoMonitoreado(), fuentes.normal()).setMinHeight(ALTO_COMPROMISO));
+        tabla.addCell(celda(hoja.compromisoMonitor(), fuentes.normal()).setMinHeight(ALTO_COMPROMISO));
+        return tabla;
+    }
+
+    /**
+     * Espacios de firma y sello. La hoja HTML separa las dos columnas con «border-spacing: 24px», que también
+     * deja ese espacio a los lados; aquí son columnas vacías.
+     */
+    private static Table firmas(HojaMonitoreoResponse hoja, Fuentes fuentes) {
+        List<UnitValue> anchos = new ArrayList<>();
+        for (int columna = 0; columna < 5; columna++) {
+            anchos.add(columna % 2 == 0 ? UnitValue.createPointValue(SEPARACION_FIRMAS) : UnitValue.createPercentValue(50));
+        }
+        Table tabla = new Table(anchos.toArray(UnitValue[]::new)).useAllAvailableWidth();
+        tabla.setMarginTop(12).setKeepTogether(true);
+        tabla.addCell(new Cell().setBorder(Border.NO_BORDER));
+        tabla.addCell(firma("MONITOREADO · FIRMA Y SELLO", hoja.firmaMonitoreado(), fuentes));
+        tabla.addCell(new Cell().setBorder(Border.NO_BORDER));
+        tabla.addCell(firma("MONITOR · FIRMA Y SELLO", hoja.firmaMonitor(), fuentes));
+        tabla.addCell(new Cell().setBorder(Border.NO_BORDER));
+        return tabla;
+    }
+
+    private static Cell firma(String rol, String nombre, Fuentes fuentes) {
+        return new Cell().setBorder(Border.NO_BORDER).setPadding(0)
+                .setTextAlignment(TextAlignment.CENTER)
+                .add(new Paragraph().setHeight(ALTO_FIRMA).setMargin(0).setMarginBottom(3)
+                        .setBorderBottom(new SolidBorder(NEGRO, BORDE)))
+                .add(parrafo(rol, fuentes.negrita(), TEXTO))
+                .add(parrafo(nombre, fuentes.normal(), TEXTO));
     }
 
     /**
@@ -142,7 +303,7 @@ public class ItextRenderer {
      * (cabecera y primera fila), pasa a la página siguiente, como «page-break-after: avoid» en la hoja HTML.
      * No se usa keepWithNext porque iText lo aplica a la tabla entera y deja huecos al pie de las páginas.
      */
-    private static void seccion(Document documento, String texto, float margenSuperior, Table comienzo, Fuentes fuentes) {
+    private static void seccion(Document documento, String texto, float margenSuperior, IBlockElement comienzo, Fuentes fuentes) {
         Paragraph titulo = parrafo(mayusculas(texto), fuentes.negrita(), SECCION)
                 .setMarginTop(margenSuperior).setMarginBottom(4.5f);
         float libre = documento.getRenderer().getCurrentArea().getBBox().getHeight();

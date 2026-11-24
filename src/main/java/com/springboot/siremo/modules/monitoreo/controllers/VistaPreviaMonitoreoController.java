@@ -61,4 +61,20 @@ public class VistaPreviaMonitoreoController extends ParentController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(service.generarPdf(id));
     }
+
+    @GetMapping(value = "/{id}/itext", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Hoja de un monitoreo aplicado en PDF A4 con iText 7",
+            description = "Misma hoja, armada por código con la API de Layout de iText 7. Con descargar=true se descarga")
+    public ResponseEntity<byte[]> generarPdfItext(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "false") boolean descargar
+    ) {
+        ContentDisposition disposition = (descargar ? ContentDisposition.attachment() : ContentDisposition.inline())
+                .filename("monitoreo-" + id + "-itext.pdf")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(service.generarPdfItext(id));
+    }
 }

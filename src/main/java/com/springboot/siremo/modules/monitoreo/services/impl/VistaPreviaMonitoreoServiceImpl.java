@@ -42,6 +42,7 @@ public class VistaPreviaMonitoreoServiceImpl implements VistaPreviaMonitoreoServ
     private final VistaPreviaMonitoreoRepository repository;
     private final VistaPreviaFichaRepository fichaRepository;
     private final HojaRenderer renderer;
+    private final ItextRenderer itext;
 
     @Override
     public List<MonitoreoResumenResponse> listarRecientes(int limite) {
@@ -93,6 +94,11 @@ public class VistaPreviaMonitoreoServiceImpl implements VistaPreviaMonitoreoServ
     @Override
     public byte[] generarPdf(UUID monitoreoId) {
         return renderer.pdf(generarHtml(monitoreoId));
+    }
+
+    @Override
+    public byte[] generarPdfItext(UUID monitoreoId) {
+        return itext.pdf(obtenerHoja(monitoreoId));
     }
 
     // Datos de identificación, con las mismas secciones que arma el front (hoja-aplicacion.ts).

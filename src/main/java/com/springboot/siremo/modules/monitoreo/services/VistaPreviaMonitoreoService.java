@@ -19,4 +19,7 @@ public interface VistaPreviaMonitoreoService {
 
     /** La hoja del monitoreo aplicado en PDF A4, lista para imprimir y firmar. */
     byte[] generarPdf(UUID monitoreoId);
+
+    /** La misma hoja en PDF A4, armada por código con iText 7 (API de Layout). */
+    byte[] generarPdfItext(UUID monitoreoId);
 }
