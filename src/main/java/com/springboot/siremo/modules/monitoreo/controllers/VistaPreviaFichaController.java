@@ -72,8 +72,8 @@ public class VistaPreviaFichaController extends ParentController {
     }
 
     @GetMapping(value = "/{id}/itext", produces = MediaType.APPLICATION_PDF_VALUE)
-    @Operation(summary = "Hoja de una ficha en PDF A4 con iText 7",
-            description = "Misma hoja, armada por código con la API de Layout de iText 7. Con descargar=true se descarga")
+    @Operation(summary = "Ficha en blanco en PDF A4 con iText 7, en el formato oficial de su instrumento",
+            description = "Formato de especialistas UGEL, directivos o docentes según el instrumento de la ficha, con la matriz de puntajes. Con descargar=true se descarga")
     public ResponseEntity<byte[]> generarPdfItext(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "false") boolean descargar

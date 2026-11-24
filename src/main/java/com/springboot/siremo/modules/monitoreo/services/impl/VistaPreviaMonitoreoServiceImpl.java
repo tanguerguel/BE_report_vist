@@ -43,6 +43,7 @@ public class VistaPreviaMonitoreoServiceImpl implements VistaPreviaMonitoreoServ
     private final VistaPreviaFichaRepository fichaRepository;
     private final HojaRenderer renderer;
     private final ItextRenderer itext;
+    private final ItextOficialRenderer oficial;
 
     @Override
     public List<MonitoreoResumenResponse> listarRecientes(int limite) {
@@ -51,9 +52,15 @@ public class VistaPreviaMonitoreoServiceImpl implements VistaPreviaMonitoreoServ
 
     @Override
     public HojaMonitoreoResponse obtenerHoja(UUID monitoreoId) {
-        Map<String, Object> m = repository.findMonitoreo(monitoreoId)
-                .orElseThrow(() -> new ResourceNotFoundException(VistaPreviaFichaConstants.MONITOREO_NO_ENCONTRADO));
+        return hoja(monitoreoId, monitoreo(monitoreoId));
+    }
 
+    private Map<String, Object> monitoreo(UUID monitoreoId) {
+        return repository.findMonitoreo(monitoreoId)
+                .orElseThrow(() -> new ResourceNotFoundException(VistaPreviaFichaConstants.MONITOREO_NO_ENCONTRADO));
+    }
+
+    private HojaMonitoreoResponse hoja(UUID monitoreoId, Map<String, Object> m) {
         UUID fichaVersionId = (UUID) m.get("ficha_version_id");
         String nivel = primero(texto(m, "aula_nivel"), texto(m, "institucion_nivel"));
         List<DimensionAplicadaResponse> dimensiones = dimensiones(monitoreoId, fichaVersionId, nivel);
@@ -98,7 +105,78 @@ public class VistaPreviaMonitoreoServiceImpl implements VistaPreviaMonitoreoServ
 
     @Override
     public byte[] generarPdfItext(UUID monitoreoId) {
-        return itext.pdf(obtenerHoja(monitoreoId));
+        Map<String, Object> m = monitoreo(monitoreoId);
+        HojaMonitoreoResponse hoja = hoja(monitoreoId, m);
+        // Cada instrumento tiene su formato oficial; si el instrumento no tiene uno, la hoja genérica.
+        return HojaOficial.Formato.deActor(texto(m, "actor_objetivo"))
+                .map(formato -> oficial.pdf(hojaOficial(formato, hoja, m)))
+                .orElseGet(() -> itext.pdf(hoja));
+    }
+
+    /** La hoja del monitoreo con los datos sueltos que piden los formatos oficiales. */
+    private HojaOficial hojaOficial(HojaOficial.Formato formato, HojaMonitoreoResponse hoja, Map<String, Object> m) {
+        Map<UUID, List<RangoNivelResponse>> matrices = matrices((UUID) m.get("ficha_version_id"));
+        List<HojaOficial.Dimension> dimensiones = hoja.dimensiones().stream()
+                .map(d -> {
+                    BigDecimal suma = suma(d);
+                    return new HojaOficial.Dimension(
+                            d.nombre(),
+                            d.puntajes().isEmpty() ? HojaOficial.NIVELES : d.puntajes(),
+                            d.items().stream()
+                                    .map(i -> new HojaOficial.Item(i.enunciado(), Objects.toString(i.puntaje(), ""), i.observacion()))
+                                    .toList(),
+                            suma == null ? d.parcial() : HojaUtils.numero(suma),
+                            matrices.getOrDefault(d.id(), List.of()),
+                            suma);
+                })
+                .toList();
+
+        boolean especialista = formato == HojaOficial.Formato.ESPECIALISTA;
+        String grado = texto(m, "grado");
+        String seccion = texto(m, "seccion");
+        LocalDate aplicacion = fecha(m, "fecha_aplicacion");
+        HojaOficial.Datos datos = new HojaOficial.Datos(
+                texto(m, "ugel"), "", texto(m, "institucion"), texto(m, "codigo_modular"), "", texto(m, "lugar"),
+                Objects.toString(primero(texto(m, "aula_nivel"), texto(m, "institucion_nivel")), ""),
+                texto(m, "modelo_servicio"), texto(m, "modalidad"), texto(m, "forma_eib"),
+                texto(m, "director_nombre"), texto(m, "director_celular"),
+                texto(m, "monitor_nombres"), texto(m, "monitor_apellidos"), texto(m, "monitor_documento"),
+                Objects.toString(m.get("numero_visita"), ""),
+                aplicacion == null ? "" : HojaUtils.fecha(aplicacion),
+                instante(m, "inicio") == null ? "" : HojaUtils.hora(instante(m, "inicio")),
+                instante(m, "fin") == null ? "" : HojaUtils.hora(instante(m, "fin")),
+                nombreCompleto(texto(m, "observado_nombres"), texto(m, "observado_apellidos")),
+                texto(m, "observado_documento"),
+                texto(m, "condicion"),
+                especialista ? texto(m, "especialista_celular") : texto(m, "celular"),
+                grado.isBlank() && seccion.isBlank() ? "" : grado + " / " + seccion,
+                cifra(m, "matriculados_varones"), cifra(m, "matriculados_mujeres"),
+                cifra(m, "asistentes_varones"), cifra(m, "asistentes_mujeres"),
+                cifra(m, "inclusivos_varones"), cifra(m, "inclusivos_mujeres"),
+                texto(m, "especialista_nivel"), texto(m, "especialista_correo"), texto(m, "experiencia"));
+
+        return new HojaOficial(formato, hoja.titulo(), datos, hoja.escala(), dimensiones, hoja.observaciones(),
+                hoja.compromisoMonitoreado(), hoja.compromisoMonitor(), hoja.firmaMonitoreado(), hoja.firmaMonitor());
+    }
+
+    /**
+     * Puntaje obtenido en la dimensión, solo si se puede ubicar en su matriz: todos los ítems valorados y
+     * ninguno que no aplique (la misma regla que el puntaje parcial).
+     */
+    private static BigDecimal suma(DimensionAplicadaResponse dimension) {
+        String parcial = Objects.toString(dimension.parcial(), "");
+        if (parcial.startsWith("Pendiente") || parcial.startsWith("Sin resultado") || parcial.contains("no aplica")) {
+            return null;
+        }
+        return dimension.items().stream()
+                .map(ItemAplicadoResponse::puntaje)
+                .filter(p -> p != null && !p.isBlank())
+                .map(p -> new BigDecimal(p.replace(',', '.')))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private static String cifra(Map<String, Object> m, String columna) {
+        return m.get(columna) instanceof Number n ? String.valueOf(n.intValue()) : "";
     }
 
     // Datos de identificación, con las mismas secciones que arma el front (hoja-aplicacion.ts).

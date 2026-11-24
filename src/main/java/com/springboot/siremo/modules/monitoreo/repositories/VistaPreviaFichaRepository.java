@@ -21,7 +21,8 @@ public class VistaPreviaFichaRepository {
     private final JdbcClient jdbc;
 
     public record FichaRow(UUID id, String nombre, boolean variasPublicadas, String denominacion,
-                           List<String> niveles, String normaCodigo, String codigoVersion, String estado) {
+                           List<String> niveles, String normaCodigo, String codigoVersion, String estado,
+                           String actorObjetivo) {
     }
 
     public record DimensionRow(UUID id, String nombre, Integer orden) {
@@ -37,7 +38,7 @@ public class VistaPreviaFichaRepository {
     public Optional<FichaRow> findFicha(UUID fichaVersionId) {
         return jdbc.sql("""
                         SELECT v.id, i.nombre, i.permite_varias_publicadas, v.denominacion, v.niveles,
-                               v.norma_codigo, v.codigo_version, v.estado
+                               v.norma_codigo, v.codigo_version, v.estado, i.actor_objetivo
                           FROM siremo_v3.ficha_version v
                           JOIN siremo_v3.instrumento i ON i.id = v.instrumento_id
                          WHERE v.id = :id
@@ -51,7 +52,8 @@ public class VistaPreviaFichaRepository {
                         textos(rs.getArray("niveles")),
                         rs.getString("norma_codigo"),
                         rs.getString("codigo_version"),
-                        rs.getString("estado")))
+                        rs.getString("estado"),
+                        rs.getString("actor_objetivo")))
                 .optional();
     }
 

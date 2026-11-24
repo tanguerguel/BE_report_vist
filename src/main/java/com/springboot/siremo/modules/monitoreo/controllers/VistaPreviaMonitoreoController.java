@@ -63,8 +63,8 @@ public class VistaPreviaMonitoreoController extends ParentController {
     }
 
     @GetMapping(value = "/{id}/itext", produces = MediaType.APPLICATION_PDF_VALUE)
-    @Operation(summary = "Hoja de un monitoreo aplicado en PDF A4 con iText 7",
-            description = "Misma hoja, armada por código con la API de Layout de iText 7. Con descargar=true se descarga")
+    @Operation(summary = "Monitoreo aplicado en PDF A4 con iText 7, en el formato oficial de su instrumento",
+            description = "La ficha llenada en el formato de especialistas UGEL, directivos o docentes, con la matriz de puntajes y el nivel obtenido. Con descargar=true se descarga")
     public ResponseEntity<byte[]> generarPdfItext(
             @PathVariable UUID id,
             @RequestParam(defaultValue = "false") boolean descargar

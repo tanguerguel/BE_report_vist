@@ -26,6 +26,7 @@ public class VistaPreviaFichaServiceImpl implements VistaPreviaFichaService {
     private final HojaRenderer renderer;
     private final Jasper6Renderer jasper;
     private final ItextRenderer itext;
+    private final ItextOficialRenderer oficial;
 
     @Override
     public HojaFichaResponse obtenerHoja(UUID fichaVersionId) {
@@ -80,7 +81,12 @@ public class VistaPreviaFichaServiceImpl implements VistaPreviaFichaService {
 
     @Override
     public byte[] generarPdfItext(UUID fichaVersionId) {
-        return itext.pdf(obtenerHoja(fichaVersionId));
+        HojaFichaResponse hoja = obtenerHoja(fichaVersionId);
+        // Cada instrumento tiene su formato oficial; si el instrumento no tiene uno, la hoja genérica.
+        return repository.findFicha(fichaVersionId)
+                .flatMap(f -> HojaOficial.Formato.deActor(f.actorObjetivo()))
+                .map(formato -> oficial.pdf(HojaOficial.deFicha(hoja, formato)))
+                .orElseGet(() -> itext.pdf(hoja));
     }
 
     private Map<UUID, List<RangoNivelResponse>> matricesPorDimension(UUID fichaVersionId) {
